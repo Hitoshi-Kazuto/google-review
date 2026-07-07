@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { getBusiness, getAnalytics, updateBusiness } from "../api.js";
+import { clearBusinessAuth, getBusinessAuth } from "../auth.js";
 
 function StarBar({ stars, count, max }) {
   const pct = max > 0 ? (count / max) * 100 : 0;
@@ -32,6 +33,7 @@ function badgeLabel(type) {
 
 export default function BusinessDashboard() {
   const { businessId } = useParams();
+  const navigate = useNavigate();
   const [business, setBusiness] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,12 @@ export default function BusinessDashboard() {
   const [keywordMsg, setKeywordMsg] = useState(null);
 
   useEffect(() => {
+    const auth = getBusinessAuth();
+    if (!auth || auth.businessId !== businessId) {
+      navigate("/business/login", { replace: true });
+      return;
+    }
+
     Promise.all([getBusiness(businessId), getAnalytics(businessId)])
       .then(([biz, stats]) => {
         setBusiness(biz);
@@ -51,7 +59,7 @@ export default function BusinessDashboard() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [businessId]);
+  }, [businessId, navigate]);
 
   function addKeyword() {
     const trimmed = newKeyword.trim();
@@ -116,9 +124,22 @@ export default function BusinessDashboard() {
 
   return (
     <div className="page">
-      <Link to="/" className="back-link">
-        ← Home
-      </Link>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Link to="/" className="back-link" style={{ marginBottom: 0 }}>
+          ← Home
+        </Link>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ width: "auto", marginTop: 0, padding: "8px 12px" }}
+          onClick={() => {
+            clearBusinessAuth();
+            navigate("/business/login", { replace: true });
+          }}
+        >
+          Sign out
+        </button>
+      </div>
       <h1>{business.name}</h1>
       <p className="subtitle">Business dashboard</p>
 

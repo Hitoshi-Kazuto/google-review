@@ -233,11 +233,6 @@ export default function ReviewFlow() {
 
       {step === "edit" && (
         <>
-          {usedMock && (
-            <p className="subtitle" style={{ fontSize: "0.8125rem", color: "#92400e" }}>
-              Demo mode — backend unavailable, using sample drafts.
-            </p>
-          )}
           <ReviewEditor
             drafts={drafts}
             selectedDraftId={selectedDraftId}

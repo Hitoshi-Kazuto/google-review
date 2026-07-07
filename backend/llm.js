@@ -3,6 +3,54 @@ const HF_API_URL =
   "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct/v1/chat/completions";
 const HF_API_TOKEN = process.env.HF_API_TOKEN;
 
+function buildLocalReviewDrafts({ businessName, stars, tags, count = 3 }) {
+  const tagPhrase = tags && tags.length ? ` I especially noticed ${tags.join(" and ").toLowerCase()}.` : "";
+  const templates = {
+    5: [
+      `Had a great experience at ${businessName}! Everything felt smooth and welcoming.${tagPhrase} I’d definitely come back.`,
+      `${businessName} really impressed me today.${tagPhrase} The whole visit felt thoughtful and easy.`,
+      `Really enjoyed my time at ${businessName}.${tagPhrase} It felt like a place that genuinely cares about guests.`,
+    ],
+    4: [
+      `Had a solid experience at ${businessName}.${tagPhrase} There were a few small things that could be better, but overall it was great.`,
+      `${businessName} delivered a good experience.${tagPhrase} I’d be happy to return and recommend it.`,
+      `Enjoyed my visit to ${businessName}.${tagPhrase} The service felt warm and the overall experience was positive.`,
+    ],
+    3: [
+      `${businessName} was okay.${tagPhrase} Some parts were strong, but there are a couple things that could improve.`,
+      `My experience at ${businessName} was mixed.${tagPhrase} There were highlights, but it wasn’t perfect.`,
+      `Visited ${businessName} and had a fairly average experience.${tagPhrase} I saw some strengths, though there is room to improve.`,
+    ],
+    2: [
+      `My visit to ${businessName} fell short of expectations.${tagPhrase} A few things made the experience frustrating.`,
+      `I had a disappointing experience at ${businessName}.${tagPhrase} It didn’t feel as polished as it should have.`,
+      `${businessName} needs some attention.${tagPhrase} A few issues stood out during my visit.`,
+    ],
+    1: [
+      `My experience at ${businessName} was very poor.${tagPhrase} Several things went wrong and it felt frustrating.`,
+      `I was disappointed by ${businessName}.${tagPhrase} The visit did not meet basic expectations.`,
+      `${businessName} needs urgent improvement.${tagPhrase} The experience felt careless and disappointing.`,
+    ],
+  };
+
+  const options = templates[stars] || templates[3];
+  return options.slice(0, count).map((text) => text.trim());
+}
+
+function buildLocalSuggestedTags({ stars, existingTags = [], count = 6 }) {
+  const pool = {
+    5: ["Great service", "Friendly team", "Smooth visit", "Welcoming atmosphere", "Attention to detail", "Would return"],
+    4: ["Good value", "Pleasant visit", "Helpful team", "Nice ambiance", "Reliable service", "Would recommend"],
+    3: ["Decent experience", "Room to improve", "Fair service", "Some highlights", "Average visit", "Could be better"],
+    2: ["Needs improvement", "Poor service", "Long wait", "Disappointing visit", "Below expectations", "Not great"],
+    1: ["Very disappointed", "Poor service", "Unacceptable wait", "Would not return", "Major issues", "Needs urgent fix"],
+  };
+
+  const existingLower = new Set(existingTags.map((t) => t.toLowerCase()));
+  const suggestions = (pool[stars] || pool[3]).filter((tag) => !existingLower.has(tag.toLowerCase()));
+  return suggestions.slice(0, count);
+}
+
 function buildPrompt({ businessName, stars, tags, draftCount }) {
   const tagLine =
     tags && tags.length
@@ -78,7 +126,7 @@ function parseDrafts(raw) {
 
 export async function generateReviewDrafts({ businessName, stars, tags, count = 3 }) {
   if (!HF_API_TOKEN) {
-    throw new Error("HF_API_TOKEN is not set in backend/.env");
+    return buildLocalReviewDrafts({ businessName, stars, tags, count });
   }
 
   const prompt = buildPrompt({ businessName, stars, tags, draftCount: count });
@@ -144,7 +192,7 @@ export async function generateSuggestedTags({
   count = 6,
 }) {
   if (!HF_API_TOKEN) {
-    throw new Error("HF_API_TOKEN is not set in backend/.env");
+    return buildLocalSuggestedTags({ stars, existingTags, count });
   }
 
   const prompt = buildSuggestedTagsPrompt({ businessName, stars, existingTags, count });

@@ -452,6 +452,23 @@ textarea.review-editor:focus {
   margin-top: 4px;
 }
 
+.credential-box {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.credential-box strong {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

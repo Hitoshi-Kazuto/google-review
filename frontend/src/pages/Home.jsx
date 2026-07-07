@@ -14,6 +14,21 @@ export default function Home() {
             Try customer flow (demo)
           </Link>
           <Link
+            to="/business/login"
+            className="btn btn-secondary"
+            style={{ textDecoration: "none" }}
+          >
+            Business login
+          </Link>
+          <Link
+            to="/business/login"
+            className="btn btn-secondary"
+            style={{ textDecoration: "none" }}
+            state={{ businessId: "biz_demo", loginCode: "BIZ-DEMO1" }}
+          >
+            Try demo business login
+          </Link>
+          <Link
             to="/business/register"
             className="btn btn-secondary"
             style={{ textDecoration: "none" }}

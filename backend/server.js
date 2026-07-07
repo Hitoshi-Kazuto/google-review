@@ -19,23 +19,22 @@ function formatBusiness(biz) {
     logo_url: biz.logo_url,
     google_review_url: biz.google_review_url,
     tag_options: JSON.parse(biz.tag_options),
+    login_code: biz.login_code,
     qr_url: `${APP_BASE_URL}/r/${biz.id}`,
     created_at: biz.created_at,
   };
 }
 
 // GET /api/business/:business_id
-app.get("/api/business/:business_id", (req, res) => {
-  const biz = db
-    .prepare("SELECT * FROM businesses WHERE id = ?")
-    .get(req.params.business_id);
+app.get("/api/business/:business_id", async (req, res) => {
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
   res.json(formatBusiness(biz));
 });
 
 // POST /api/businesses — register a new business
-app.post("/api/businesses", (req, res) => {
+app.post("/api/businesses", async (req, res) => {
   const { name, google_review_url, tag_options = [], logo_url = "" } = req.body;
 
   if (!name?.trim() || !google_review_url?.trim()) {
@@ -49,20 +48,42 @@ app.post("/api/businesses", (req, res) => {
     : [];
 
   const id = `biz_${nanoid(8)}`;
-  db.prepare(
-    `INSERT INTO businesses (id, name, logo_url, google_review_url, tag_options)
-     VALUES (?, ?, ?, ?, ?)`
-  ).run(id, name.trim(), logo_url.trim(), google_review_url.trim(), JSON.stringify(tags));
+  const loginCode = `BIZ-${nanoid(6).toUpperCase()}`;
+  await db.run(
+    `INSERT INTO businesses (id, name, logo_url, google_review_url, tag_options, login_code)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, name.trim(), logo_url.trim(), google_review_url.trim(), JSON.stringify(tags), loginCode]
+  );
 
-  const biz = db.prepare("SELECT * FROM businesses WHERE id = ?").get(id);
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [id]);
   res.status(201).json(formatBusiness(biz));
 });
 
+// POST /api/businesses/login
+app.post("/api/businesses/login", async (req, res) => {
+  const { business_id, login_code } = req.body;
+
+  if (!business_id?.trim() || !login_code?.trim()) {
+    return res.status(400).json({ error: "business_id and login_code are required" });
+  }
+
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [String(business_id).trim()]);
+
+  if (!biz) return res.status(404).json({ error: "Business not found" });
+
+  const provided = String(login_code).trim().toUpperCase();
+  const stored = String(biz.login_code || "").trim().toUpperCase();
+
+  if (provided !== stored) {
+    return res.status(401).json({ error: "Invalid login credentials" });
+  }
+
+  res.json(formatBusiness(biz));
+});
+
 // PATCH /api/business/:business_id — update business settings
-app.patch("/api/business/:business_id", (req, res) => {
-  const biz = db
-    .prepare("SELECT * FROM businesses WHERE id = ?")
-    .get(req.params.business_id);
+app.patch("/api/business/:business_id", async (req, res) => {
+  const biz = await db.get("SELECT * FROM businesses WHERE id = ?", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
 
@@ -98,11 +119,10 @@ app.patch("/api/business/:business_id", (req, res) => {
   }
 
   values.push(req.params.business_id);
-  db.prepare(`UPDATE businesses SET ${updates.join(", ")} WHERE id = ?`).run(...values);
+  const placeholders = updates.map((_, index) => `$${index + 1}`).join(", ");
+  await db.run(`UPDATE businesses SET ${updates.join(", ")} WHERE id = $${values.length}`, values);
 
-  const updated = db
-    .prepare("SELECT * FROM businesses WHERE id = ?")
-    .get(req.params.business_id);
+  const updated = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
   res.json(formatBusiness(updated));
 });
 
@@ -113,9 +133,7 @@ app.get("/api/business/:business_id/suggested-tags", async (req, res) => {
     return res.status(400).json({ error: "stars query param (1-5) is required" });
   }
 
-  const biz = db
-    .prepare("SELECT * FROM businesses WHERE id = ?")
-    .get(req.params.business_id);
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
 
@@ -136,25 +154,21 @@ app.get("/api/business/:business_id/suggested-tags", async (req, res) => {
 });
 
 // GET /api/business/:business_id/analytics
-app.get("/api/business/:business_id/analytics", (req, res) => {
-  const biz = db
-    .prepare("SELECT * FROM businesses WHERE id = ?")
-    .get(req.params.business_id);
+app.get("/api/business/:business_id/analytics", async (req, res) => {
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
 
-  const drafts = db
-    .prepare(
-      `SELECT stars, action, was_edited, created_at
-       FROM review_drafts WHERE business_id = ?`
-    )
-    .all(req.params.business_id);
+  const drafts = await db.all(
+    `SELECT stars, action, was_edited, created_at
+     FROM review_drafts WHERE business_id = $1`,
+    [req.params.business_id]
+  );
 
-  const feedback = db
-    .prepare(
-      `SELECT stars, created_at FROM private_feedback WHERE business_id = ?`
-    )
-    .all(req.params.business_id);
+  const feedback = await db.all(
+    `SELECT stars, created_at FROM private_feedback WHERE business_id = $1`,
+    [req.params.business_id]
+  );
 
   const posted = drafts.filter((d) => d.action === "posted_to_google").length;
   const privateCount = drafts.filter((d) => d.action === "sent_private_feedback").length;
@@ -209,7 +223,7 @@ app.post("/api/generate-review", async (req, res) => {
     return res.status(400).json({ error: "business_id and stars (1-5) are required" });
   }
 
-  const biz = db.prepare("SELECT * FROM businesses WHERE id = ?").get(business_id);
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [business_id]);
   if (!biz) return res.status(404).json({ error: "Business not found" });
 
   try {
@@ -220,14 +234,16 @@ app.post("/api/generate-review", async (req, res) => {
       count: 3,
     });
 
-    const drafts = texts.map((text) => {
+    const drafts = [];
+    for (const text of texts) {
       const id = nanoid();
-      db.prepare(
+      await db.run(
         `INSERT INTO review_drafts (id, business_id, stars, tags, generated_text)
-         VALUES (?, ?, ?, ?, ?)`
-      ).run(id, business_id, stars, JSON.stringify(tags), text);
-      return { draft_id: id, text };
-    });
+         VALUES ($1, $2, $3, $4, $5)`,
+        [id, business_id, stars, JSON.stringify(tags), text]
+      );
+      drafts.push({ draft_id: id, text });
+    }
 
     res.json({ drafts });
   } catch (err) {
@@ -242,14 +258,14 @@ app.post("/api/generate-review", async (req, res) => {
 // POST /api/regenerate-review
 app.post("/api/regenerate-review", async (req, res) => {
   const { draft_id } = req.body;
-  const draft = db.prepare("SELECT * FROM review_drafts WHERE id = ?").get(draft_id);
+  const draft = await db.get("SELECT * FROM review_drafts WHERE id = $1", [draft_id]);
   if (!draft) return res.status(404).json({ error: "Draft not found" });
 
   if (draft.regeneration_count >= MAX_REGENERATIONS) {
     return res.status(429).json({ error: "Regeneration limit reached" });
   }
 
-  const biz = db.prepare("SELECT * FROM businesses WHERE id = ?").get(draft.business_id);
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [draft.business_id]);
 
   try {
     const texts = await generateReviewDrafts({
@@ -260,10 +276,11 @@ app.post("/api/regenerate-review", async (req, res) => {
     });
     const text = texts[0];
 
-    db.prepare(
-      `UPDATE review_drafts SET generated_text = ?, regeneration_count = regeneration_count + 1
-       WHERE id = ?`
-    ).run(text, draft_id);
+    await db.run(
+      `UPDATE review_drafts SET generated_text = $1, regeneration_count = regeneration_count + 1
+       WHERE id = $2`,
+      [text, draft_id]
+    );
 
     res.json({ draft_id, text });
   } catch (err) {
@@ -273,37 +290,39 @@ app.post("/api/regenerate-review", async (req, res) => {
 });
 
 // POST /api/review-action
-app.post("/api/review-action", (req, res) => {
+app.post("/api/review-action", async (req, res) => {
   const { draft_id, final_text, action } = req.body;
 
   if (!["posted_to_google", "sent_private_feedback"].includes(action)) {
     return res.status(400).json({ error: "Invalid action" });
   }
 
-  const draft = db.prepare("SELECT * FROM review_drafts WHERE id = ?").get(draft_id);
+  const draft = await db.get("SELECT * FROM review_drafts WHERE id = $1", [draft_id]);
   if (!draft) return res.status(404).json({ error: "Draft not found" });
 
   const wasEdited =
     final_text && final_text.trim() !== draft.generated_text.trim() ? 1 : 0;
 
-  db.prepare(
-    `UPDATE review_drafts SET final_text = ?, was_edited = ?, action = ? WHERE id = ?`
-  ).run(final_text || draft.generated_text, wasEdited, action, draft_id);
+  await db.run(
+    `UPDATE review_drafts SET final_text = $1, was_edited = $2, action = $3 WHERE id = $4`,
+    [final_text || draft.generated_text, wasEdited, action, draft_id]
+  );
 
   res.json({ ok: true });
 });
 
 // POST /api/private-feedback
-app.post("/api/private-feedback", (req, res) => {
+app.post("/api/private-feedback", async (req, res) => {
   const { business_id, stars, text } = req.body;
   if (!business_id || !stars || !text) {
     return res.status(400).json({ error: "business_id, stars, and text are required" });
   }
 
   const id = nanoid();
-  db.prepare(
-    `INSERT INTO private_feedback (id, business_id, stars, text) VALUES (?, ?, ?, ?)`
-  ).run(id, business_id, stars, text);
+  await db.run(
+    `INSERT INTO private_feedback (id, business_id, stars, text) VALUES ($1, $2, $3, $4)`,
+    [id, business_id, stars, text]
+  );
 
   res.json({ ok: true });
 });

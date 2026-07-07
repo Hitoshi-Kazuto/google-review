@@ -28,7 +28,12 @@ export default function BusinessRegister() {
         tag_options,
         logo_url: logoUrl,
       });
-      navigate(`/business/${biz.id}`);
+      navigate(`/business/login`, {
+        state: {
+          businessId: biz.id,
+          loginCode: biz.login_code,
+        },
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -70,7 +75,7 @@ export default function BusinessRegister() {
             required
           />
           <p className="form-hint">
-            From Google Business Profile → Ask for reviews → copy link
+            From Google Business Profile → Ask for reviews → copy link. For testing, a placeholder URL like https://example.com/review is fine.
           </p>
         </div>
 

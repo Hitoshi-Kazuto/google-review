@@ -49,6 +49,13 @@ export function registerBusiness(data) {
   });
 }
 
+export function loginBusiness(data) {
+  return request("/api/businesses/login", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export function getAnalytics(businessId) {
   return request(`/api/business/${businessId}/analytics`);
 }
