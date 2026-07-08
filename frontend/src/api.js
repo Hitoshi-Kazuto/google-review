@@ -1,6 +1,19 @@
 import { getAuthToken } from "./auth.js";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "";
+const RAW_API_BASE = import.meta.env.VITE_API_BASE?.trim() || "";
+const API_BASE = RAW_API_BASE ? RAW_API_BASE.replace(/\/+$/, "") : "";
+
+function buildUrl(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!API_BASE) return normalizedPath;
+
+  try {
+    return new URL(normalizedPath, `${API_BASE}/`).toString();
+  } catch {
+    return `${API_BASE}${normalizedPath}`;
+  }
+}
 
 function authHeaders() {
   const token = getAuthToken();
@@ -8,7 +21,7 @@ function authHeaders() {
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(buildUrl(path), {
     headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
   });
