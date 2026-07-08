@@ -1,7 +1,11 @@
 import { getAuthToken } from "./auth.js";
 
 const RAW_API_BASE = import.meta.env.VITE_API_BASE?.trim() || "";
-const API_BASE = RAW_API_BASE ? RAW_API_BASE.replace(/\/+$/, "") : "";
+const API_BASE = RAW_API_BASE 
+  ? (RAW_API_BASE.startsWith('http://') || RAW_API_BASE.startsWith('https://')
+      ? RAW_API_BASE.replace(/\/+$/, "")
+      : `https://${RAW_API_BASE.replace(/\/+$/, "")}`)
+  : "";
 
 function buildUrl(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

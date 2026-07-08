@@ -30,6 +30,11 @@ Runs on `http://localhost:3000`. Seeds demo business `biz_demo` ("Cafe Luna") on
 3. Create token: https://huggingface.co/settings/tokens
 4. Set `HF_API_TOKEN=hf_xxxxx` in `backend/.env`
 
+**CORS Configuration:**
+- `ALLOWED_ORIGINS`: Comma-separated list of allowed frontend URLs (default: `http://localhost:5173,http://localhost:3000`)
+  - Development: `ALLOWED_ORIGINS=http://localhost:5173`
+  - Production: `ALLOWED_ORIGINS=https://your-frontend-url.com`
+
 Without a token, the frontend falls back to mock drafts so you can demo the UI.
 
 ### 2. Frontend
@@ -37,12 +42,17 @@ Without a token, the frontend falls back to mock drafts so you can demo the UI.
 ```bash
 cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-Opens at `http://localhost:5173`. API calls proxy to the backend via Vite.
+Opens at `http://localhost:5173`.
 
-Set `VITE_API_BASE` if the backend runs elsewhere.
+**Environment Configuration:**
+- `VITE_API_BASE`: Backend API URL (default: `http://localhost:3000`)
+  - Development: `VITE_API_BASE=http://localhost:3000`
+  - Production: `VITE_API_BASE=https://your-backend-url.com`
+  - Note: The API client auto-adds `https://` if protocol is omitted
 
 ## Routes
 
