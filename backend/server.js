@@ -8,22 +8,19 @@ import { hashPassword, verifyPassword, signToken, verifyToken } from "./auth.js"
 
 const app = express();
 
-// Configure CORS - allow all origins for Vercel deployment
+// Configure CORS - allow all origins (Bearer-token auth, no cookies, so credentials:true is not needed
+// and is actually invalid to combine with origin: '*')
 app.use(cors({
   origin: '*',
-  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Explicitly handle OPTIONS requests for preflight
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
+// Note: no manual app.options('*', ...) handler here — the cors() middleware
+// above already handles OPTIONS preflight requests automatically. A bare '*'
+// route pattern also breaks on newer path-to-regexp/Express versions and can
+// crash the whole serverless function on Vercel (which shows up as a 404
+// with no CORS headers at all).
 
 app.use(express.json());
 
