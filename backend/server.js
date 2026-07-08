@@ -8,19 +8,14 @@ import { hashPassword, verifyPassword, signToken, verifyToken } from "./auth.js"
 
 const app = express();
 
-// Configure CORS - allow all origins (Bearer-token auth, no cookies, so credentials:true is not needed
-// and is actually invalid to combine with origin: '*')
+// Configure CORS - allow all origins for Vercel deployment
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Note: no manual app.options('*', ...) handler here — the cors() middleware
-// above already handles OPTIONS preflight requests automatically. A bare '*'
-// route pattern also breaks on newer path-to-regexp/Express versions and can
-// crash the whole serverless function on Vercel (which shows up as a 404
-// with no CORS headers at all).
+
 
 app.use(express.json());
 
@@ -402,16 +397,8 @@ app.post("/api/private-feedback", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "google-reviews-backend" });
-});
-
 const PORT = process.env.PORT || 3000;
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`ReviewDo backend running on http://localhost:${PORT}`);
-    console.log(`Demo login: demo@cafeluna.com / demo1234`);
-  });
-}
-
-export default app;
+app.listen(PORT, () => {
+  console.log(`ReviewDo backend running on http://localhost:${PORT}`);
+  console.log(`Demo login: demo@cafeluna.com / demo1234`);
+});
