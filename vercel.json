@@ -1,0 +1,5 @@
+{
+  "installCommand": "npm install && cd backend && npm install && cd ../db && npm install",
+  "buildCommand": "cd backend && npm install",
+  "outputDirectory": "backend"
+}
