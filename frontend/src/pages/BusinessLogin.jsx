@@ -16,11 +16,11 @@ export default function BusinessLogin() {
     if (location.state?.loginCode) setLoginCode(location.state.loginCode);
   }, [location.state]);
 
-  function handleDemoLogin() {
-    setBusinessId("biz_demo");
-    setLoginCode("BIZ-DEMO1");
-    setError(null);
-  }
+//   function handleDemoLogin() {
+//     setBusinessId("biz_demo");
+//     setLoginCode("BIZ-DEMO1");
+//     setError(null);
+//   }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -50,9 +50,9 @@ export default function BusinessLogin() {
       <p className="subtitle">
         Use the credentials issued when you registered your business to view analytics.
       </p>
-      <button type="button" className="btn btn-secondary" style={{ marginBottom: 16 }} onClick={handleDemoLogin}>
+      {/* <button type="button" className="btn btn-secondary" style={{ marginBottom: 16 }} onClick={handleDemoLogin}>
         Use demo business account
-      </button>
+      </button> */}
 
       {location.state?.businessId && (
         <div className="card" style={{ marginBottom: 16 }}>
