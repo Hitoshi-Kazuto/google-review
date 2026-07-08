@@ -1,4 +1,5 @@
 {
+  "installCommand": "cd ../db && npm install && npm install",
   "rewrites": [
     {
       "source": "/api/:path*",

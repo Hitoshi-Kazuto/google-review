@@ -398,7 +398,12 @@ app.post("/api/private-feedback", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`ReviewDo backend running on http://localhost:${PORT}`);
-  console.log(`Demo login: demo@cafeluna.com / demo1234`);
-});
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`ReviewDo backend running on http://localhost:${PORT}`);
+    console.log(`Demo login: demo@cafeluna.com / demo1234`);
+  });
+}
+
+export default app;
