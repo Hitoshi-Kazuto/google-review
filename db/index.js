@@ -7,8 +7,54 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, "reviews.db");
 const connectionString = process.env.DATABASE_URL;
 
+const DEMO_EMAIL = "demo@cafeluna.com";
+const DEMO_PASSWORD_HASH =
+  "$2b$10$C.q.2M..XQHjF05S.MQJPeMs5pj2bqAG2mWfFHpX5s/KxctTbomvu";
+
 function normalizeSqlForSqlite(sql) {
   return sql.replace(/\$([0-9]+)/g, "?");
+}
+
+function migrateBusinessesSqlite(sqlite) {
+  const tableInfo = sqlite.prepare("PRAGMA table_info(businesses)").all();
+  const columns = new Set(tableInfo.map((column) => column.name));
+
+  if (!columns.has("email")) {
+    sqlite.exec("ALTER TABLE businesses ADD COLUMN email TEXT");
+  }
+  if (!columns.has("password_hash")) {
+    sqlite.exec("ALTER TABLE businesses ADD COLUMN password_hash TEXT");
+  }
+
+  sqlite.exec(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email) WHERE email IS NOT NULL"
+  );
+}
+
+function seedDemoBusinessSqlite(sqlite) {
+  const existing = sqlite.prepare("SELECT COUNT(*) AS c FROM businesses").get();
+  if (existing.c === 0) {
+    sqlite
+      .prepare(
+        `INSERT INTO businesses (id, name, email, password_hash, logo_url, google_review_url, tag_options)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        "biz_demo",
+        "Cafe Luna",
+        DEMO_EMAIL,
+        DEMO_PASSWORD_HASH,
+        "",
+        "https://search.google.com/local/writereview?placeid=REPLACE_WITH_REAL_PLACE_ID",
+        JSON.stringify(["Fast service", "Friendly staff", "Clean space", "Great food"])
+      );
+  } else {
+    sqlite
+      .prepare(
+        `UPDATE businesses SET email = ?, password_hash = ? WHERE id = 'biz_demo'`
+      )
+      .run(DEMO_EMAIL, DEMO_PASSWORD_HASH);
+  }
 }
 
 function createSqliteAdapter() {
@@ -17,10 +63,11 @@ function createSqliteAdapter() {
   CREATE TABLE IF NOT EXISTS businesses (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    email TEXT,
+    password_hash TEXT,
     logo_url TEXT,
     google_review_url TEXT NOT NULL,
     tag_options TEXT NOT NULL DEFAULT '[]',
-    login_code TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
 
@@ -48,28 +95,8 @@ function createSqliteAdapter() {
   );
   `);
 
-  const tableInfo = sqlite.prepare("PRAGMA table_info(businesses)").all();
-  const hasLoginCode = tableInfo.some((column) => column.name === "login_code");
-  if (!hasLoginCode) {
-    sqlite.exec("ALTER TABLE businesses ADD COLUMN login_code TEXT");
-  }
-
-  const existing = sqlite.prepare("SELECT COUNT(*) AS c FROM businesses").get();
-  if (existing.c === 0) {
-    sqlite.prepare(
-      `INSERT INTO businesses (id, name, logo_url, google_review_url, tag_options, login_code)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(
-      "biz_demo",
-      "Cafe Luna",
-      "",
-      "https://search.google.com/local/writereview?placeid=REPLACE_WITH_REAL_PLACE_ID",
-      JSON.stringify(["Fast service", "Friendly staff", "Clean space", "Great food"]),
-      "BIZ-DEMO1"
-    );
-  } else {
-    sqlite.prepare(`UPDATE businesses SET login_code = ? WHERE id = 'biz_demo'`).run("BIZ-DEMO1");
-  }
+  migrateBusinessesSqlite(sqlite);
+  seedDemoBusinessSqlite(sqlite);
 
   return {
     prepare(sql) {
@@ -116,6 +143,38 @@ function createPostgresAdapter() {
   };
 }
 
+async function migrateBusinessesPostgres(db) {
+  await db.run(`ALTER TABLE businesses ADD COLUMN IF NOT EXISTS email TEXT`);
+  await db.run(`ALTER TABLE businesses ADD COLUMN IF NOT EXISTS password_hash TEXT`);
+  await db.run(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_email ON businesses(email) WHERE email IS NOT NULL`
+  );
+}
+
+async function seedDemoBusinessPostgres(db) {
+  const existing = await db.get("SELECT COUNT(*)::int AS c FROM businesses");
+  if (existing.c === 0) {
+    await db.run(
+      `INSERT INTO businesses (id, name, email, password_hash, logo_url, google_review_url, tag_options)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        "biz_demo",
+        "Cafe Luna",
+        DEMO_EMAIL,
+        DEMO_PASSWORD_HASH,
+        "",
+        "https://search.google.com/local/writereview?placeid=REPLACE_WITH_REAL_PLACE_ID",
+        JSON.stringify(["Fast service", "Friendly staff", "Clean space", "Great food"]),
+      ]
+    );
+  } else {
+    await db.run(`UPDATE businesses SET email = $1, password_hash = $2 WHERE id = 'biz_demo'`, [
+      DEMO_EMAIL,
+      DEMO_PASSWORD_HASH,
+    ]);
+  }
+}
+
 let db;
 
 if (connectionString) {
@@ -125,10 +184,11 @@ if (connectionString) {
     CREATE TABLE IF NOT EXISTS businesses (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      email TEXT,
+      password_hash TEXT,
       logo_url TEXT,
       google_review_url TEXT NOT NULL,
       tag_options TEXT NOT NULL DEFAULT '[]',
-      login_code TEXT,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
@@ -160,23 +220,8 @@ if (connectionString) {
     );
   `);
 
-  const existing = await db.get("SELECT COUNT(*)::int AS c FROM businesses");
-  if (existing.c === 0) {
-    await db.run(
-      `INSERT INTO businesses (id, name, logo_url, google_review_url, tag_options, login_code)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        "biz_demo",
-        "Cafe Luna",
-        "",
-        "https://search.google.com/local/writereview?placeid=REPLACE_WITH_REAL_PLACE_ID",
-        JSON.stringify(["Fast service", "Friendly staff", "Clean space", "Great food"]),
-        "BIZ-DEMO1",
-      ]
-    );
-  } else {
-    await db.run(`UPDATE businesses SET login_code = $1 WHERE id = 'biz_demo'`, ["BIZ-DEMO1"]);
-  }
+  await migrateBusinessesPostgres(db);
+  await seedDemoBusinessPostgres(db);
 } else {
   db = createSqliteAdapter();
 }

@@ -4,6 +4,7 @@ import cors from "cors";
 import { nanoid } from "nanoid";
 import db from "../db/index.js";
 import { generateReviewDrafts, generateSuggestedTags } from "./llm.js";
+import { hashPassword, verifyPassword, signToken, verifyToken } from "./auth.js";
 
 const app = express();
 app.use(cors());
@@ -12,20 +13,48 @@ app.use(express.json());
 const MAX_REGENERATIONS = Number(process.env.MAX_REGENERATIONS || 3);
 const APP_BASE_URL = process.env.APP_BASE_URL || "http://localhost:5173";
 
-function formatBusiness(biz) {
-  return {
+function formatBusiness(biz, { includeEmail = false } = {}) {
+  const result = {
     id: biz.id,
     name: biz.name,
     logo_url: biz.logo_url,
     google_review_url: biz.google_review_url,
     tag_options: JSON.parse(biz.tag_options),
-    login_code: biz.login_code,
     qr_url: `${APP_BASE_URL}/r/${biz.id}`,
     created_at: biz.created_at,
   };
+  if (includeEmail && biz.email) {
+    result.email = biz.email;
+  }
+  return result;
 }
 
-// GET /api/business/:business_id
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  try {
+    const payload = verifyToken(authHeader.slice(7));
+    req.businessId = payload.businessId;
+
+    const routeBusinessId = req.params.business_id;
+    if (routeBusinessId && routeBusinessId !== payload.businessId) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired session" });
+  }
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// GET /api/business/:business_id — public (customer review flow)
 app.get("/api/business/:business_id", async (req, res) => {
   const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
@@ -35,12 +64,35 @@ app.get("/api/business/:business_id", async (req, res) => {
 
 // POST /api/businesses — register a new business
 app.post("/api/businesses", async (req, res) => {
-  const { name, google_review_url, tag_options = [], logo_url = "" } = req.body;
+  const {
+    name,
+    email,
+    password,
+    google_review_url,
+    tag_options = [],
+    logo_url = "",
+  } = req.body;
 
-  if (!name?.trim() || !google_review_url?.trim()) {
+  if (!name?.trim() || !email?.trim() || !password || !google_review_url?.trim()) {
     return res.status(400).json({
-      error: "name and google_review_url are required",
+      error: "name, email, password, and google_review_url are required",
     });
+  }
+
+  if (!isValidEmail(email.trim())) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
+
+  if (String(password).length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const existing = await db.get("SELECT id FROM businesses WHERE LOWER(email) = $1", [
+    normalizedEmail,
+  ]);
+  if (existing) {
+    return res.status(409).json({ error: "An account with this email already exists" });
   }
 
   const tags = Array.isArray(tag_options)
@@ -48,42 +100,51 @@ app.post("/api/businesses", async (req, res) => {
     : [];
 
   const id = `biz_${nanoid(8)}`;
-  const loginCode = `BIZ-${nanoid(6).toUpperCase()}`;
+  const passwordHash = await hashPassword(password);
+
   await db.run(
-    `INSERT INTO businesses (id, name, logo_url, google_review_url, tag_options, login_code)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [id, name.trim(), logo_url.trim(), google_review_url.trim(), JSON.stringify(tags), loginCode]
+    `INSERT INTO businesses (id, name, email, password_hash, logo_url, google_review_url, tag_options)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      id,
+      name.trim(),
+      normalizedEmail,
+      passwordHash,
+      logo_url.trim(),
+      google_review_url.trim(),
+      JSON.stringify(tags),
+    ]
   );
 
   const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [id]);
-  res.status(201).json(formatBusiness(biz));
+  const token = signToken(id);
+  res.status(201).json({ ...formatBusiness(biz, { includeEmail: true }), token });
 });
 
 // POST /api/businesses/login
 app.post("/api/businesses/login", async (req, res) => {
-  const { business_id, login_code } = req.body;
+  const { email, password } = req.body;
 
-  if (!business_id?.trim() || !login_code?.trim()) {
-    return res.status(400).json({ error: "business_id and login_code are required" });
+  if (!email?.trim() || !password) {
+    return res.status(400).json({ error: "email and password are required" });
   }
 
-  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [String(business_id).trim()]);
+  const normalizedEmail = email.trim().toLowerCase();
+  const biz = await db.get("SELECT * FROM businesses WHERE LOWER(email) = $1", [
+    normalizedEmail,
+  ]);
 
-  if (!biz) return res.status(404).json({ error: "Business not found" });
-
-  const provided = String(login_code).trim().toUpperCase();
-  const stored = String(biz.login_code || "").trim().toUpperCase();
-
-  if (provided !== stored) {
-    return res.status(401).json({ error: "Invalid login credentials" });
+  if (!biz || !(await verifyPassword(password, biz.password_hash))) {
+    return res.status(401).json({ error: "Invalid email or password" });
   }
 
-  res.json(formatBusiness(biz));
+  const token = signToken(biz.id);
+  res.json({ ...formatBusiness(biz, { includeEmail: true }), token });
 });
 
 // PATCH /api/business/:business_id — update business settings
-app.patch("/api/business/:business_id", async (req, res) => {
-  const biz = await db.get("SELECT * FROM businesses WHERE id = ?", [req.params.business_id]);
+app.patch("/api/business/:business_id", requireAuth, async (req, res) => {
+  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
 
@@ -154,7 +215,7 @@ app.get("/api/business/:business_id/suggested-tags", async (req, res) => {
 });
 
 // GET /api/business/:business_id/analytics
-app.get("/api/business/:business_id/analytics", async (req, res) => {
+app.get("/api/business/:business_id/analytics", requireAuth, async (req, res) => {
   const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [req.params.business_id]);
 
   if (!biz) return res.status(404).json({ error: "Business not found" });
@@ -329,6 +390,6 @@ app.post("/api/private-feedback", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Review app backend running on http://localhost:${PORT}`);
-  console.log(`Demo business available at GET /api/business/biz_demo`);
+  console.log(`ReviewDo backend running on http://localhost:${PORT}`);
+  console.log(`Demo login: demo@cafeluna.com / demo1234`);
 });

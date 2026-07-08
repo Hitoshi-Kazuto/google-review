@@ -1,4 +1,11 @@
+import { getAuthToken } from "./auth.js";
+
 const API_BASE = import.meta.env.VITE_API_BASE || "";
+
+function authHeaders() {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -57,12 +64,15 @@ export function loginBusiness(data) {
 }
 
 export function getAnalytics(businessId) {
-  return request(`/api/business/${businessId}/analytics`);
+  return request(`/api/business/${businessId}/analytics`, {
+    headers: authHeaders(),
+  });
 }
 
 export function updateBusiness(businessId, data) {
   return request(`/api/business/${businessId}`, {
     method: "PATCH",
+    headers: authHeaders(),
     body: JSON.stringify(data),
   });
 }

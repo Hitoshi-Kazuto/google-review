@@ -1,7 +1,7 @@
-const STORAGE_KEY = "review_funnel_business_auth";
+const STORAGE_KEY = "reviewdo_business_auth";
 
-export function saveBusinessAuth(businessId, loginCode) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ businessId, loginCode }));
+export function saveBusinessAuth(businessId, token) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ businessId, token }));
 }
 
 export function getBusinessAuth() {
@@ -11,6 +11,10 @@ export function getBusinessAuth() {
   } catch {
     return null;
   }
+}
+
+export function getAuthToken() {
+  return getBusinessAuth()?.token ?? null;
 }
 
 export function clearBusinessAuth() {
