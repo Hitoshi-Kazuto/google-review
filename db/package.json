@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
-    "pg": "^8.22.0"
+    "better-sqlite3": "^11.8.1"
   }
 }
