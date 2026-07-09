@@ -127,7 +127,8 @@ export default function ReviewFlow() {
     if (!usedMock && selectedDraftId) {
       try {
         await reviewAction(selectedDraftId, reviewText, "posted_to_google");
-      } catch {
+      } catch (err) {
+        console.error("Failed to log review action:", err);
         /* analytics optional */
       }
     }
@@ -141,14 +142,16 @@ export default function ReviewFlow() {
     if (!usedMock && selectedDraftId) {
       try {
         await reviewAction(selectedDraftId, reviewText, "sent_private_feedback");
-      } catch {
+      } catch (err) {
+        console.error("Failed to log private feedback action:", err);
         /* fall through */
       }
     }
 
     try {
       await sendPrivateFeedback(businessId, stars, reviewText);
-    } catch {
+    } catch (err) {
+      console.error("Failed to send private feedback:", err);
       /* still show success to customer */
     }
 

@@ -390,22 +390,32 @@ app.post("/api/regenerate-review", async (req, res) => {
 app.post("/api/review-action", async (req, res) => {
   const { draft_id, final_text, action } = req.body;
 
+  console.log("Review action received:", { draft_id, action });
+
   if (!["posted_to_google", "sent_private_feedback"].includes(action)) {
     return res.status(400).json({ error: "Invalid action" });
   }
 
   const draft = await db.get("SELECT * FROM review_drafts WHERE id = $1", [draft_id]);
-  if (!draft) return res.status(404).json({ error: "Draft not found" });
+  if (!draft) {
+    console.error("Draft not found:", draft_id);
+    return res.status(404).json({ error: "Draft not found" });
+  }
 
   const wasEdited =
     final_text && final_text.trim() !== draft.generated_text.trim() ? 1 : 0;
 
-  await db.run(
-    `UPDATE review_drafts SET final_text = $1, was_edited = $2, action = $3 WHERE id = $4`,
-    [final_text || draft.generated_text, wasEdited, action, draft_id]
-  );
-
-  res.json({ ok: true });
+  try {
+    await db.run(
+      `UPDATE review_drafts SET final_text = $1, was_edited = $2, action = $3 WHERE id = $4`,
+      [final_text || draft.generated_text, wasEdited, action, draft_id]
+    );
+    console.log("Review action saved:", { draft_id, action });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to update review draft:", err);
+    res.status(500).json({ error: "Failed to save review action" });
+  }
 });
 
 // GET /api/business/:business_id/private-feedback — fetch private feedbacks
