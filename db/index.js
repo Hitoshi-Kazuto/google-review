@@ -140,6 +140,9 @@ function createPostgresAdapter() {
     async close() {
       await pool.end();
     },
+    async ping() {
+      await pool.query("SELECT 1");
+    },
   };
 }
 
@@ -180,48 +183,66 @@ let db;
 if (connectionString) {
   db = createPostgresAdapter();
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS businesses (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT,
-      password_hash TEXT,
-      logo_url TEXT,
-      google_review_url TEXT NOT NULL,
-      tag_options TEXT NOT NULL DEFAULT '[]',
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
+  try {
+    await db.ping();
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS review_drafts (
-      id TEXT PRIMARY KEY,
-      business_id TEXT NOT NULL,
-      stars INTEGER NOT NULL,
-      tags TEXT NOT NULL DEFAULT '[]',
-      generated_text TEXT NOT NULL,
-      final_text TEXT,
-      was_edited INTEGER DEFAULT 0,
-      regeneration_count INTEGER DEFAULT 0,
-      action TEXT,
-      created_at TIMESTAMP DEFAULT NOW(),
-      FOREIGN KEY (business_id) REFERENCES businesses(id)
-    );
-  `);
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS businesses (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT,
+        password_hash TEXT,
+        logo_url TEXT,
+        google_review_url TEXT NOT NULL,
+        tag_options TEXT NOT NULL DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS private_feedback (
-      id TEXT PRIMARY KEY,
-      business_id TEXT NOT NULL,
-      stars INTEGER NOT NULL,
-      text TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW(),
-      FOREIGN KEY (business_id) REFERENCES businesses(id)
-    );
-  `);
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS review_drafts (
+        id TEXT PRIMARY KEY,
+        business_id TEXT NOT NULL,
+        stars INTEGER NOT NULL,
+        tags TEXT NOT NULL DEFAULT '[]',
+        generated_text TEXT NOT NULL,
+        final_text TEXT,
+        was_edited INTEGER DEFAULT 0,
+        regeneration_count INTEGER DEFAULT 0,
+        action TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+      );
+    `);
 
-  await migrateBusinessesPostgres(db);
-  await seedDemoBusinessPostgres(db);
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS private_feedback (
+        id TEXT PRIMARY KEY,
+        business_id TEXT NOT NULL,
+        stars INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        FOREIGN KEY (business_id) REFERENCES businesses(id)
+      );
+    `);
+
+    await migrateBusinessesPostgres(db);
+    await seedDemoBusinessPostgres(db);
+  } catch (error) {
+    console.error("Database initialization failed:", error);
+    db = {
+      async get() {
+        throw new Error("Database unavailable");
+      },
+      async all() {
+        throw new Error("Database unavailable");
+      },
+      async run() {
+        throw new Error("Database unavailable");
+      },
+      async close() {},
+    };
+  }
 } else {
   db = createSqliteAdapter();
 }
