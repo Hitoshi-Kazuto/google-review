@@ -116,38 +116,45 @@ app.post("/api/businesses", async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 6 characters" });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const existing = await db.get("SELECT id FROM businesses WHERE LOWER(email) = $1", [
-    normalizedEmail,
-  ]);
-  if (existing) {
-    return res.status(409).json({ error: "An account with this email already exists" });
-  }
-
-  const tags = Array.isArray(tag_options)
-    ? tag_options.map((t) => String(t).trim()).filter(Boolean)
-    : [];
-
-  const id = `biz_${nanoid(8)}`;
-  const passwordHash = await hashPassword(password);
-
-  await db.run(
-    `INSERT INTO businesses (id, name, email, password_hash, logo_url, google_review_url, tag_options)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [
-      id,
-      name.trim(),
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await db.get("SELECT id FROM businesses WHERE LOWER(email) = $1", [
       normalizedEmail,
-      passwordHash,
-      logo_url.trim(),
-      google_review_url.trim(),
-      JSON.stringify(tags),
-    ]
-  );
+    ]);
+    if (existing) {
+      return res.status(409).json({ error: "An account with this email already exists" });
+    }
 
-  const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [id]);
-  const token = signToken(id);
-  res.status(201).json({ ...formatBusiness(biz, { includeEmail: true }), token });
+    const tags = Array.isArray(tag_options)
+      ? tag_options.map((t) => String(t).trim()).filter(Boolean)
+      : [];
+
+    const id = `biz_${nanoid(8)}`;
+    const passwordHash = await hashPassword(password);
+
+    await db.run(
+      `INSERT INTO businesses (id, name, email, password_hash, logo_url, google_review_url, tag_options)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        id,
+        name.trim(),
+        normalizedEmail,
+        passwordHash,
+        logo_url.trim(),
+        google_review_url.trim(),
+        JSON.stringify(tags),
+      ]
+    );
+
+    const biz = await db.get("SELECT * FROM businesses WHERE id = $1", [id]);
+    const token = signToken(id);
+    return res.status(201).json({ ...formatBusiness(biz, { includeEmail: true }), token });
+  } catch (err) {
+    console.error("Business registration failed", err);
+    return res.status(503).json({
+      error: "Database unavailable. Please try again later or configure DATABASE_URL.",
+    });
+  }
 });
 
 // POST /api/businesses/login
