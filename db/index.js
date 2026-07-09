@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -58,7 +58,7 @@ function seedDemoBusinessSqlite(sqlite) {
 }
 
 function createSqliteAdapter() {
-  const sqlite = new Database(dbPath);
+  const sqlite = new DatabaseSync(dbPath);
   sqlite.exec(`
   CREATE TABLE IF NOT EXISTS businesses (
     id TEXT PRIMARY KEY,

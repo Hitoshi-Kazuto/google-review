@@ -6,14 +6,13 @@ import { saveBusinessAuth } from "../auth.js";
 export default function BusinessLogin() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [businessId, setBusinessId] = useState(location.state?.businessId || "");
-  const [loginCode, setLoginCode] = useState(location.state?.loginCode || "");
+  const [email, setEmail] = useState(location.state?.email || "");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (location.state?.businessId) setBusinessId(location.state.businessId);
-    if (location.state?.loginCode) setLoginCode(location.state.loginCode);
+    if (location.state?.email) setEmail(location.state.email);
   }, [location.state]);
 
 //   function handleDemoLogin() {
@@ -29,10 +28,10 @@ export default function BusinessLogin() {
 
     try {
       const biz = await loginBusiness({
-        business_id: businessId.trim(),
-        login_code: loginCode.trim(),
+        email: email.trim().toLowerCase(),
+        password,
       });
-      saveBusinessAuth(biz.id, biz.login_code || loginCode.trim());
+      saveBusinessAuth(biz.id, biz.token);
       navigate(`/business/${biz.id}`);
     } catch (err) {
       setError(err.message);
@@ -54,19 +53,15 @@ export default function BusinessLogin() {
         Use demo business account
       </button> */}
 
-      {location.state?.businessId && (
+      {location.state?.email && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <h2>Your credentials</h2>
+          <h2>Account ready</h2>
           <p className="form-hint" style={{ marginBottom: 12 }}>
-            Save these details. You’ll need them each time you sign in.
+            Use the email and password you created when you registered.
           </p>
           <div className="credential-box">
-            <strong>Business ID</strong>
-            <div>{location.state.businessId}</div>
-          </div>
-          <div className="credential-box">
-            <strong>Login code</strong>
-            <div>{location.state.loginCode}</div>
+            <strong>Email</strong>
+            <div>{location.state.email}</div>
           </div>
         </div>
       )}
@@ -75,23 +70,25 @@ export default function BusinessLogin() {
 
       <form onSubmit={handleSubmit} className="card">
         <div className="form-group">
-          <label htmlFor="business-id">Business ID</label>
+          <label htmlFor="email">Email</label>
           <input
-            id="business-id"
-            value={businessId}
-            onChange={(e) => setBusinessId(e.target.value)}
-            placeholder="biz_abc123"
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="owner@business.com"
             required
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="login-code">Login code</label>
+          <label htmlFor="password">Password</label>
           <input
-            id="login-code"
-            value={loginCode}
-            onChange={(e) => setLoginCode(e.target.value)}
-            placeholder="BIZ-ABC123"
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
             required
           />
         </div>

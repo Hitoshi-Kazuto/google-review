@@ -5,6 +5,8 @@ import { registerBusiness } from "../api.js";
 export default function BusinessRegister() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   const [keywords, setKeywords] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -24,14 +26,15 @@ export default function BusinessRegister() {
     try {
       const biz = await registerBusiness({
         name,
+        email: email.trim().toLowerCase(),
+        password,
         google_review_url: googleReviewUrl,
         tag_options,
         logo_url: logoUrl,
       });
       navigate(`/business/login`, {
         state: {
-          businessId: biz.id,
-          loginCode: biz.login_code,
+          email: biz.email,
         },
       });
     } catch (err) {
@@ -61,6 +64,30 @@ export default function BusinessRegister() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Cafe Luna"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="owner@business.com"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 6 characters"
             required
           />
         </div>

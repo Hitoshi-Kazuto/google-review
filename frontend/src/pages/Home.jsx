@@ -28,6 +28,50 @@ const FEATURES = [
   },
 ];
 
+const PORTALS = [
+  {
+    title: "Login / Logout Portal",
+    description:
+      "A simple, secure access point for business owners and staff to enter or leave the dashboard anytime.",
+    badge: "Portal",
+  },
+  {
+    title: "Reviewदो branding",
+    description:
+      "The visual identity now reflects the brand with the updated Reviewदो wordmark and a logo-matched palette.",
+    badge: "Brand",
+  },
+  {
+    title: "Analytics Portal",
+    description:
+      "Monitor reviews, feedback quality, and customer sentiment from one central place.",
+    badge: "Insights",
+  },
+];
+
+const PRICING = [
+  {
+    name: "Designed QR sticker",
+    price: "₹499/-",
+    detail: "Perfect for counters, tables, and storefront entrances.",
+  },
+  {
+    name: "Standee",
+    price: "₹799/-",
+    detail: "A polished display unit for reception areas, events, and promotions.",
+  },
+  {
+    name: "Extra standee",
+    price: "₹299/-",
+    detail: "Add more visibility at a lower cost for each extra unit.",
+  },
+  {
+    name: "Monthly subscription",
+    price: "₹199/-",
+    detail: "Keep your review flow active with ongoing support and updates.",
+  },
+];
+
 const STEPS = [
   {
     num: "01",
@@ -51,9 +95,8 @@ export default function Home() {
     <div className="landing">
       <header className="landing-header">
         <Link to="/" className="landing-brand">
-          {/* <span className="landing-logo">R</span> */}
-          <img src={logo} alt="ReviewDo Logo" className="landing-logo" />
-          ReviewDo
+          <img src={logo} alt="Reviewदो Logo" className="landing-logo" />
+          Reviewदो
         </Link>
         <nav className="landing-nav">
           <Link to="/business/login" className="landing-nav-link">
@@ -73,7 +116,7 @@ export default function Home() {
           <span className="hero-accent">Less effort.</span>
         </h1>
         <p className="hero-subtitle">
-          ReviewDo gives your customers a guided, AI-assisted path to leave authentic Google
+          Reviewदो gives your customers a guided, AI-assisted path to leave authentic Google
           reviews — while routing private feedback straight to you.
         </p>
         <div className="hero-actions">
@@ -88,10 +131,30 @@ export default function Home() {
 
       <section className="landing-section">
         <div className="section-header">
-          <p className="section-eyebrow">Why ReviewDo</p>
+          <p className="section-eyebrow">Portals & tools</p>
+          <h2>Everything you need from one place</h2>
+          <p className="section-desc">
+            Bring together your login access, branding, and analytics in a single experience your
+            team can use every day.
+          </p>
+        </div>
+        <div className="portal-grid">
+          {PORTALS.map((portal) => (
+            <div key={portal.title} className="portal-card">
+              <span className="portal-badge">{portal.badge}</span>
+              <h3>{portal.title}</h3>
+              <p>{portal.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="section-header">
+          <p className="section-eyebrow">Why Reviewदो</p>
           <h2>Everything you need to grow your online reputation</h2>
           <p className="section-desc">
-            Stop hoping customers remember to review you. ReviewDo makes it effortless for them
+            Stop hoping customers remember to review you. Reviewदो makes it effortless for them
             and measurable for you.
           </p>
         </div>
@@ -123,10 +186,26 @@ export default function Home() {
       </section>
 
       <section className="landing-section">
+        <div className="section-header">
+          <p className="section-eyebrow">Pricing</p>
+          <h2>Simple, affordable options for every setup</h2>
+        </div>
+        <div className="pricing-grid">
+          {PRICING.map((plan) => (
+            <div key={plan.name} className="price-card">
+              <h3>{plan.name}</h3>
+              <p className="price-tag">{plan.price}</p>
+              <p className="price-detail">{plan.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
         <div className="cta-banner">
           <h2>Ready to turn visits into reviews?</h2>
           <p>
-            Join businesses using ReviewDo to build trust, rank higher on Google, and hear from
+            Join businesses using Reviewदो to build trust, rank higher on Google, and hear from
             customers before problems go public.
           </p>
           <Link to="/business/register" className="btn btn-primary btn-light">
@@ -140,7 +219,7 @@ export default function Home() {
           <p className="section-eyebrow">Try it yourself</p>
           <h2>Explore the demo</h2>
           <p className="section-desc">
-            See ReviewDo from both sides — experience the customer review flow or log into a
+            See Reviewदो from both sides — experience the customer review flow or log into a
             sample business dashboard.
           </p>
         </div>
@@ -168,8 +247,8 @@ export default function Home() {
 
       <footer className="landing-footer">
         <Link to="/" className="landing-brand">
-          <span className="landing-logo">R</span>
-          ReviewDo
+          <img src={logo} alt="Reviewदो Logo" className="landing-logo" />
+          Reviewदो
         </Link>
         <p className="landing-footer-copy">
           AI-powered Google review collection for local businesses.
