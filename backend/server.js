@@ -408,6 +408,16 @@ app.post("/api/review-action", async (req, res) => {
   res.json({ ok: true });
 });
 
+// GET /api/business/:business_id/private-feedback — fetch private feedbacks
+app.get("/api/business/:business_id/private-feedback", requireAuth, async (req, res) => {
+  const feedbacks = await db.all(
+    `SELECT id, stars, text, created_at FROM private_feedback WHERE business_id = $1 ORDER BY created_at DESC`,
+    [req.params.business_id]
+  );
+
+  res.json({ feedbacks });
+});
+
 // POST /api/private-feedback
 app.post("/api/private-feedback", async (req, res) => {
   const { business_id, stars, text } = req.body;

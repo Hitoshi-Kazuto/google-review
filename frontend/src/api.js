@@ -98,6 +98,12 @@ export function getSuggestedTags(businessId, stars) {
   return request(`/api/business/${businessId}/suggested-tags?stars=${stars}`);
 }
 
+export function getPrivateFeedback(businessId) {
+  return request(`/api/business/${businessId}/private-feedback`, {
+    headers: authHeaders(),
+  });
+}
+
 const MOCK_SUGGESTED_BY_STARS = {
   5: ["Exceeded expectations", "Will come back", "Great atmosphere", "Attention to detail", "Smooth experience", "Worth recommending"],
   4: ["Mostly great", "Good value", "Pleasant visit", "Nice ambiance", "Helpful team", "Would return"],

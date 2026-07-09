@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { getBusiness, getAnalytics, updateBusiness } from "../api.js";
+import { getBusiness, getAnalytics, updateBusiness, getPrivateFeedback } from "../api.js";
 import { clearBusinessAuth, getBusinessAuth } from "../auth.js";
 
 function StarBar({ stars, count, max }) {
@@ -43,6 +43,8 @@ export default function BusinessDashboard() {
   const [newKeyword, setNewKeyword] = useState("");
   const [savingKeywords, setSavingKeywords] = useState(false);
   const [keywordMsg, setKeywordMsg] = useState(null);
+  const [privateFeedbacks, setPrivateFeedbacks] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   useEffect(() => {
     const auth = getBusinessAuth();
@@ -59,6 +61,12 @@ export default function BusinessDashboard() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+
+    setFeedbackLoading(true);
+    getPrivateFeedback(businessId)
+      .then((data) => setPrivateFeedbacks(data.feedbacks || []))
+      .catch(() => setPrivateFeedbacks([]))
+      .finally(() => setFeedbackLoading(false));
   }, [businessId, navigate]);
 
   function addKeyword() {
@@ -211,6 +219,34 @@ export default function BusinessDashboard() {
             </div>
           )}
         </>
+      )}
+
+      {!feedbackLoading && privateFeedbacks.length > 0 && (
+        <div className="card">
+          <h2>Private feedback</h2>
+          <p className="form-hint">Feedback submitted directly from customers.</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+            {privateFeedbacks.map((fb) => (
+              <div
+                key={fb.id}
+                style={{
+                  padding: "12px",
+                  borderRadius: "8px",
+                  backgroundColor: "var(--bg-secondary)",
+                  borderLeft: `4px solid var(--${fb.stars >= 4 ? "success" : "warning"})`,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "4px" }}>
+                  <span>{"★".repeat(fb.stars)}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                    {new Date(fb.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: "1.4" }}>{fb.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="card" style={{ marginTop: 20 }}>
