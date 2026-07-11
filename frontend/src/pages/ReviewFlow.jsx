@@ -183,6 +183,7 @@ export default function ReviewFlow() {
 
   return (
     <div className="page">
+      <CustomerHeader />
       <Header />
       <div className="page-content">
       <div className="step-indicator">
