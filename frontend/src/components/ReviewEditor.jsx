@@ -69,24 +69,49 @@ export default function ReviewEditor({
 
       <div className="spacer" />
 
-      <button
-        type="button"
-        className="btn btn-google"
-        onClick={onPostToGoogle}
-        disabled={!text.trim()}
-      >
-        <Send size={18} />
-        Post to Google
-      </button>
-      <button
-        type="button"
-        className="btn btn-secondary"
-        onClick={onPrivateFeedback}
-        disabled={!text.trim()}
-      >
-        <MessageSquare size={18} />
-        Send private feedback instead
-      </button>
+      {stars <= 2 ? (
+        <>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={onPrivateFeedback}
+            disabled={!text.trim()}
+          >
+            <MessageSquare size={18} />
+            Send private feedback
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onPostToGoogle}
+            disabled={!text.trim()}
+          >
+            <Send size={18} />
+            Post to Google anyway
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="btn btn-google"
+            onClick={onPostToGoogle}
+            disabled={!text.trim()}
+          >
+            <Send size={18} />
+            Post to Google
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onPrivateFeedback}
+            disabled={!text.trim()}
+          >
+            <MessageSquare size={18} />
+            Send private feedback instead
+          </button>
+        </>
+      )}
     </>
   );
 }
