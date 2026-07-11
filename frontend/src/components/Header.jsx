@@ -36,3 +36,15 @@ export default function Header({ showLogout = false, onLogout = null, businessNa
     </header>
   );
 }
+
+
+export function CustomerHeader({ showLogout = false, onLogout = null, businessName = null }) {
+  return (
+    <header className="app-header">
+      <div className="header-brand">
+        <img src={logo} alt="Reviewदो Logo" className="header-logo" />
+        <span className="header-brand-text">Reviewदो</span>
+      </div>
+    </header>
+  );
+}
