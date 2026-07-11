@@ -267,20 +267,22 @@ app.get("/api/business/:business_id/analytics", requireAuth, async (req, res) =>
     [req.params.business_id]
   );
 
-  const posted = drafts.filter((d) => d.action === "posted_to_google").length;
   const privateCount = drafts.filter((d) => d.action === "sent_private_feedback").length;
   const edited = drafts.filter((d) => d.was_edited).length;
   const totalGenerated = drafts.length;
 
+  // Only count submitted drafts for star distribution and average
+  const submittedDrafts = drafts.filter((d) => d.action !== null && d.action !== undefined);
+
   const starCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  for (const d of drafts) {
+  for (const d of submittedDrafts) {
     if (starCounts[d.stars] !== undefined) starCounts[d.stars]++;
   }
   for (const f of feedback) {
     if (starCounts[f.stars] !== undefined) starCounts[f.stars]++;
   }
 
-  const allStars = [...drafts.map((d) => d.stars), ...feedback.map((f) => f.stars)];
+  const allStars = [...submittedDrafts.map((d) => d.stars), ...feedback.map((f) => f.stars)];
   const avgStars =
     allStars.length > 0
       ? Math.round((allStars.reduce((a, b) => a + b, 0) / allStars.length) * 10) / 10
@@ -290,7 +292,6 @@ app.get("/api/business/:business_id/analytics", requireAuth, async (req, res) =>
     business_id: biz.id,
     business_name: biz.name,
     total_reviews_generated: totalGenerated,
-    posted_to_google: posted,
     sent_private_feedback: privateCount + feedback.length,
     edited_before_posting: edited,
     average_stars: avgStars,

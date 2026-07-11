@@ -170,10 +170,6 @@ export default function BusinessDashboard() {
               <div className="stat-label">Reviews generated</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{analytics.posted_to_google}</div>
-              <div className="stat-label">Posted to Google</div>
-            </div>
-            <div className="stat-card">
               <div className="stat-value">{analytics.sent_private_feedback}</div>
               <div className="stat-label">Private feedback</div>
             </div>
