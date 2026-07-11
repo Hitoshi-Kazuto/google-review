@@ -1,3 +1,5 @@
+import { Star } from "lucide-react";
+
 export default function StarSelector({ value, onChange }) {
   return (
     <div className="stars-row">
@@ -9,7 +11,11 @@ export default function StarSelector({ value, onChange }) {
           onClick={() => onChange(n)}
           aria-label={`${n} star${n > 1 ? "s" : ""}`}
         >
-          ★
+          <Star 
+            size={32} 
+            fill={n <= value ? "currentColor" : "none"}
+            strokeWidth={2}
+          />
         </button>
       ))}
     </div>

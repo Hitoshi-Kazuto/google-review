@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { getBusiness, getAnalytics, updateBusiness, getPrivateFeedback } from "../api.js";
 import { clearBusinessAuth, getBusinessAuth } from "../auth.js";
+import Header from "../components/Header.jsx";
+import { Copy, QrCode, BarChart3, MessageSquare, Tag, X } from "lucide-react";
 
 function StarBar({ stars, count, max }) {
   const pct = max > 0 ? (count / max) * 100 : 0;
@@ -132,32 +134,29 @@ export default function BusinessDashboard() {
 
   return (
     <div className="page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Link to="/" className="back-link" style={{ marginBottom: 0 }}>
-          ← Home
-        </Link>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          style={{ width: "auto", marginTop: 0, padding: "8px 12px" }}
-          onClick={() => {
-            clearBusinessAuth();
-            navigate("/business/login", { replace: true });
-          }}
-        >
-          Sign out
-        </button>
-      </div>
+      <Header 
+        showLogout={true}
+        onLogout={() => {
+          clearBusinessAuth();
+          navigate("/business/login", { replace: true });
+        }}
+        businessName={business.name}
+      />
+      <div className="page-content">
       <h1>{business.name}</h1>
       <p className="subtitle">Business dashboard</p>
 
       <div className="qr-section">
-        <h2>Your QR code</h2>
+        <h2>
+          <QrCode size={20} className="inline-icon" />
+          Your QR code
+        </h2>
         <p className="form-hint">Print this and place it at your front desk</p>
         <QRCodeSVG value={business.qr_url} size={180} level="M" />
         <div className="link-copy">
           <input readOnly value={business.qr_url} />
           <button type="button" onClick={copyLink}>
+            <Copy size={16} />
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>
@@ -187,7 +186,10 @@ export default function BusinessDashboard() {
           </div>
 
           <div className="card" style={{ marginBottom: 20 }}>
-            <h2>Star distribution</h2>
+            <h2>
+              <BarChart3 size={20} className="inline-icon" />
+              Star distribution
+            </h2>
             {[5, 4, 3, 2, 1].map((s) => (
               <StarBar
                 key={s}
@@ -200,7 +202,10 @@ export default function BusinessDashboard() {
 
           {analytics.recent_activity.length > 0 && (
             <div className="card">
-              <h2>Recent activity</h2>
+              <h2>
+                <BarChart3 size={20} className="inline-icon" />
+                Recent activity
+              </h2>
               <ul className="activity-list">
                 {analytics.recent_activity.map((item, i) => (
                   <li key={i} className="activity-item">
@@ -223,7 +228,10 @@ export default function BusinessDashboard() {
 
       {!feedbackLoading && privateFeedbacks.length > 0 && (
         <div className="card">
-          <h2>Private feedback</h2>
+          <h2>
+            <MessageSquare size={20} className="inline-icon" />
+            Private feedback
+          </h2>
           <p className="form-hint">Feedback submitted directly from customers.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
             {privateFeedbacks.map((fb) => (
@@ -232,7 +240,7 @@ export default function BusinessDashboard() {
                 style={{
                   padding: "12px",
                   borderRadius: "8px",
-                  backgroundColor: "var(--bg-secondary)",
+                  backgroundColor: "var(--secondary-bg)",
                   borderLeft: `4px solid var(--${fb.stars >= 4 ? "success" : "warning"})`,
                 }}
               >
@@ -250,7 +258,10 @@ export default function BusinessDashboard() {
       )}
 
       <div className="card" style={{ marginTop: 20 }}>
-        <h2>Keywords</h2>
+        <h2>
+          <Tag size={20} className="inline-icon" />
+          Keywords
+        </h2>
         <p className="form-hint" style={{ marginBottom: 12 }}>
           Customers see these when leaving a review. AI also suggests extras based on their rating.
         </p>
@@ -265,7 +276,7 @@ export default function BusinessDashboard() {
                 onClick={() => removeKeyword(tag)}
                 aria-label={`Remove ${tag}`}
               >
-                ×
+                <X size={14} />
               </button>
             </span>
           ))}
@@ -306,6 +317,7 @@ export default function BusinessDashboard() {
             {keywordMsg}
           </p>
         )}
+      </div>
       </div>
     </div>
   );

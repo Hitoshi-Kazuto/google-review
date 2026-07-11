@@ -1,27 +1,28 @@
 import { Link } from "react-router-dom";
 import logo from "../public/logo.png";
+import { Sparkles, Shield, QrCode, BarChart3 } from "lucide-react";
 
 const FEATURES = [
   {
-    icon: "✦",
+    icon: <Sparkles size={24} />,
     title: "AI review drafts",
     description:
       "Customers pick what they loved — our AI turns their feedback into polished, ready-to-post Google reviews in seconds.",
   },
   {
-    icon: "◈",
+    icon: <Shield size={24} />,
     title: "Smart feedback routing",
     description:
       "Five-star experiences go to Google. Lower ratings are captured privately so you can respond before they become public.",
   },
   {
-    icon: "⬡",
+    icon: <QrCode size={24} />,
     title: "QR codes & share links",
     description:
       "Print a QR code for your counter or share a link by text. Every touchpoint becomes an opportunity for a review.",
   },
   {
-    icon: "▣",
+    icon: <BarChart3 size={24} />,
     title: "Real-time analytics",
     description:
       "Track ratings, review drafts, and customer sentiment from a simple dashboard built for busy owners.",

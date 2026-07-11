@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerBusiness } from "../api.js";
+import Header from "../components/Header.jsx";
+import { Building2, Mail, Lock, Link as LinkIcon, Tag, Image } from "lucide-react";
 
 export default function BusinessRegister() {
   const navigate = useNavigate();
@@ -46,19 +48,21 @@ export default function BusinessRegister() {
 
   return (
     <div className="page">
-      <Link to="/" className="back-link">
-        ← Back
-      </Link>
-      <h1>Register your business</h1>
-      <p className="subtitle">
-        Set up your QR code and review keywords for AI-generated drafts.
-      </p>
+      <Header />
+      <div className="page-content">
+        <h1>Register your business</h1>
+        <p className="subtitle">
+          Set up your QR code and review keywords for AI-generated drafts.
+        </p>
 
       {error && <div className="error-msg">{error}</div>}
 
       <form onSubmit={handleSubmit} className="card">
         <div className="form-group">
-          <label htmlFor="name">Business name</label>
+          <label htmlFor="name">
+            <Building2 size={16} className="input-icon" />
+            Business name
+          </label>
           <input
             id="name"
             value={name}
@@ -69,7 +73,10 @@ export default function BusinessRegister() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">
+            <Mail size={16} className="input-icon" />
+            Email
+          </label>
           <input
             id="email"
             type="email"
@@ -81,7 +88,10 @@ export default function BusinessRegister() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password">
+            <Lock size={16} className="input-icon" />
+            Password
+          </label>
           <input
             id="password"
             type="password"
@@ -93,7 +103,10 @@ export default function BusinessRegister() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="google-url">Google review URL</label>
+          <label htmlFor="google-url">
+            <LinkIcon size={16} className="input-icon" />
+            Google review URL
+          </label>
           <input
             id="google-url"
             value={googleReviewUrl}
@@ -107,7 +120,10 @@ export default function BusinessRegister() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="keywords">Review keywords (comma-separated)</label>
+          <label htmlFor="keywords">
+            <Tag size={16} className="input-icon" />
+            Review keywords (comma-separated)
+          </label>
           <textarea
             id="keywords"
             value={keywords}
@@ -121,7 +137,10 @@ export default function BusinessRegister() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="logo">Logo URL (optional)</label>
+          <label htmlFor="logo">
+            <Image size={16} className="input-icon" />
+            Logo URL (optional)
+          </label>
           <input
             id="logo"
             value={logoUrl}
@@ -134,6 +153,7 @@ export default function BusinessRegister() {
           {loading ? "Creating…" : "Create & get QR code"}
         </button>
       </form>
+      </div>
     </div>
   );
 }

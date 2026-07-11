@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginBusiness } from "../api.js";
 import { saveBusinessAuth } from "../auth.js";
+import Header from "../components/Header.jsx";
+import { Mail, Lock } from "lucide-react";
 
 export default function BusinessLogin() {
   const navigate = useNavigate();
@@ -42,13 +44,12 @@ export default function BusinessLogin() {
 
   return (
     <div className="page">
-      <Link to="/" className="back-link">
-        ← Back
-      </Link>
-      <h1>Business login</h1>
-      <p className="subtitle">
-        Use the credentials issued when you registered your business to view analytics.
-      </p>
+      <Header />
+      <div className="page-content">
+        <h1>Business login</h1>
+        <p className="subtitle">
+          Use the credentials issued when you registered your business to view analytics.
+        </p>
       {/* <button type="button" className="btn btn-secondary" style={{ marginBottom: 16 }} onClick={handleDemoLogin}>
         Use demo business account
       </button> */}
@@ -70,7 +71,10 @@ export default function BusinessLogin() {
 
       <form onSubmit={handleSubmit} className="card">
         <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">
+            <Mail size={16} className="input-icon" />
+            Email
+          </label>
           <input
             id="email"
             type="email"
@@ -82,7 +86,10 @@ export default function BusinessLogin() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password">
+            <Lock size={16} className="input-icon" />
+            Password
+          </label>
           <input
             id="password"
             type="password"
@@ -101,6 +108,7 @@ export default function BusinessLogin() {
       <p className="subtitle" style={{ marginTop: 16 }}>
         New here? <Link to="/business/register" className="nav-link">Register your business</Link>
       </p>
+      </div>
     </div>
   );
 }

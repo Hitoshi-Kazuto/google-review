@@ -1,3 +1,5 @@
+import { RefreshCw, Send, MessageSquare } from "lucide-react";
+
 const GOOGLE_MAX = 4096;
 
 export default function ReviewEditor({
@@ -61,6 +63,7 @@ export default function ReviewEditor({
         disabled={generating}
         style={{ marginTop: 0, marginBottom: 10 }}
       >
+        <RefreshCw size={18} className={generating ? "spin-icon" : ""} />
         {generating ? "Regenerating…" : "Regenerate this draft"}
       </button>
 
@@ -72,6 +75,7 @@ export default function ReviewEditor({
         onClick={onPostToGoogle}
         disabled={!text.trim()}
       >
+        <Send size={18} />
         Post to Google
       </button>
       <button
@@ -80,6 +84,7 @@ export default function ReviewEditor({
         onClick={onPrivateFeedback}
         disabled={!text.trim()}
       >
+        <MessageSquare size={18} />
         Send private feedback instead
       </button>
     </>
