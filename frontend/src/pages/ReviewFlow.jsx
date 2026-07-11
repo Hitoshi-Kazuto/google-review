@@ -14,6 +14,7 @@ import StarSelector from "../components/StarSelector.jsx";
 import TagSelector from "../components/TagSelector.jsx";
 import ReviewEditor from "../components/ReviewEditor.jsx";
 import Toast from "../components/Toast.jsx";
+import CustomerHeader from "../components/Header.jsx";
 
 const STEPS = ["rate", "tags", "generating", "edit", "done"];
 
@@ -182,6 +183,7 @@ export default function ReviewFlow() {
 
   return (
     <div className="page">
+      <Header />
       <div className="page-content">
       <div className="step-indicator">
         {STEPS.filter((s) => s !== "generating").map((s, i) => (
